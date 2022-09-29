@@ -5,6 +5,21 @@ import time
 
 
 
+#This code performs the simulation and inference. 
+# this is done by the object gl of the class rev_lib.params, which is called as:
+# params(reviewers,friends,suggestions,model,alpha,beta)
+#
+# with parameters:
+# reviewers   - #of reviewers to be classified
+# friends     - #of friendly reviewers in the dataset
+# suggestions - #of suggested reviewers per submission
+# model       - 'c' for cynical, 'q' for quality
+# alpha = 12  - parameter alpha (in the quality model)
+# beta  = 12  - parameter beta  (in the quality model)
+#
+# below we write all of the parameters used in the manuscript, they are run one at a time. In order to reproduce our results, uncomment the desired one and run the script individually. 
+
+
 gl = params(10,5,3,'c') #cynical model
 #gl = params(10,7,3,'c') #cynical with 7 friends
 #gl = params(10,9,3,'c') #cynical with 9 friends
