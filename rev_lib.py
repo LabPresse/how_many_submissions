@@ -87,7 +87,7 @@ def simulate(gl):
     df = pd.DataFrame(suggested,columns=cols)
     df['positives'] = positives
     df.to_csv('sim_data_{}.csv'.format(gl.suffix),index=False)
-    
+       
     return suggested,positives
 
 
@@ -113,7 +113,7 @@ def point_log_like(suggested,positives,model,configs,p_beta=np.ones((2,3))): #Fi
     return np.array([config_log_like(suggested,positives,model,cc,p_beta) for cc in configs])  
 
 #routines
-@njit
+@njit(cache=True)
 def comp_routine(log_L,ind):
     log_post= np.log(normalize(np.ones(log_L.shape[1])))
     V = [normalize(np.exp(log_post))]
@@ -153,6 +153,22 @@ def max_post(log_L,ind,gl):
 def exp_error(log_L,ind,gl):
     expected_error = lambda pi: (pi*gl.errors).sum()
     return routine(expected_error,log_L,ind)
+
+
+def third_more_likely(pi,gl):
+    N = gl.N_suggested
+    p = np.dot(pi,gl.configs)
+    return np.sort(p)[-N],np.argsort(p)[-N:]
+    
+def third_prob(log_L,ind,gl):
+    th_prob = lambda pi: third_more_likely(pi,gl)[0]
+    return routine(th_prob,log_L,ind)
+
+def third_error(log_L,ind,gl):
+    pi = comp_routine(log_L,ind)[-1] #gets only last one
+    conf,prop_friends = third_more_likely(pi,gl)
+    N = gl.N_suggested
+    return ind.size,conf,N - np.sum(gl.ground[prop_friends])
 
 # Obtaining the data
 def slices(i,j,lim):
@@ -194,3 +210,19 @@ def get_marginalized(log_L,suggested,gl):
     dfr = pd.DataFrame(rho_cr)
     dfr.to_csv('rho_rival_{}.csv'.format(gl.suffix),index=False)
     return np.vstack(rho_cf), np.vstack(rho_cr)
+
+def get_third(log_L,suggested,gl):
+    p3_slices = slices(*gl.S_slice,log_L.shape[0])
+    df_slices = pd.DataFrame(p3_slices)
+    df_slices.to_csv('p3_slices_{}.csv'.format(gl.suffix),index=False)
+    
+    prob3 =  np.stack([third_prob(log_L,ind,gl) for ind in p3_slices])
+    df = pd.DataFrame(prob3)
+    df.to_csv('prob3_{}.csv'.format(gl.suffix),index=False)
+    
+    p3nums = np.array([(p3<.95).argmin() for p3 in prob3])
+    err_slices = [p3[:n] for (p3,n) in zip(p3_slices,p3nums)]
+    p3_errors = np.array([third_error(log_L,ind,gl) for ind in err_slices])
+    df_err = pd.DataFrame(p3_errors,columns=['number','confidence','errors'])
+    df_err.to_csv('prob3_errors_{}.csv'.format(gl.suffix),index=False)
+    return prob3
