@@ -29,23 +29,29 @@ gl = params(10,5,3,'c') #cynical model
 #gl = params(10,9,3,'q') #quality with 9 friends
 
 
-#gl = params(10,5,3,'q',2.0625,.6875)#expected quality of .75 #.05 variance
-#gl = params(10,5,3,'q',13.3125,4.4375) #.01 variance
-#gl = params(10,5,3,'q',27.375,9.125) #.005 variance
-#gl = params(10,5,3,'q',3,1,delta=True) #0 variance
+gl = params(10,5,3,'q',2.0625,.6875)#expected quality of .75 #.05 variance
+gl = params(10,5,3,'q',13.3125,4.4375) #.01 variance
+gl = params(10,5,3,'q',27.375,9.125) #.005 variance
+gl = params(10,5,3,'q',3,1,delta=True) #0 variance
 
-#gl = params(10,5,3,'q',2,2)#here starts expected quality of .5 #.05 variance
+gl = params(10,5,3,'q',2,2)#here starts expected quality of .5 #.05 variance
 #gl = params(10,5,3,'q',12,12) #.01 variance
-#gl = params(10,5,3,'q',24.5,24.5) #.005 variance
+gl = params(10,5,3,'q',24.5,24.5) #.005 variance
 #gl = params(10,5,3,'q',1,1,delta=True)
 
-#gl = params(10,5,3,'q',.6875,2.0625)#here starts expected quality of .25 #.05 variance
-#gl = params(10,5,3,'q',4.4375,13.3125) #.01 variance
-#gl = params(10,5,3,'q',9.125,27.375) #.005 variance
+gl = params(10,5,3,'q',.6875,2.0625)#here starts expected quality of .25 #.05 variance
+gl = params(10,5,3,'q',4.4375,13.3125) #.01 variance
+gl = params(10,5,3,'q',9.125,27.375) #.005 variance
 #gl = params(10,5,3,'q',1,3,delta=True) #0 variance
 
+##BIASED PRIORS
+#gl = params(10,5,3,'c',prior_name = 'biased') #cynical model
+#gl = params(10,9,3,'c',prior_name = 'biased') #cynical with 9 friends
 
+#gl = params(10,5,3,'q',prior_name = 'biased') #quality model
+#gl = params(10,9,3,'q',prior_name = 'biased') #quality with 9 friends
 
+print(gl.suffix)
 to_simulate = True
 
 try:

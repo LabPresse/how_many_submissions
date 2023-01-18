@@ -1,14 +1,19 @@
 import numpy as np
 import pandas as pd
-from numba import jit,njit,float64
+from numba import jit,njit,float64,types
 from itertools import combinations
 
 @njit(float64[:](float64[:]))
 def normalize(x):
     return x/np.sum(x)
 
+@njit(types.int64(types.float64[:]))
+def categorical(p):
+    return (p.cumsum()<np.random.rand()).argmin()
+
+
 binary_list = lambda n: np.vstack([[int(j) for j in'{:0{}b}'.format(i, n)] for i in range(2**n)])
-        
+
 def marginalized_like(alpha,beta=1,delta=False):
     coefs = np.array([[[1,-1,-1,1],[0,1,1,-2],[0,0,0,1]],[[1,-3,3,-1],[0,3,-5,2],[0,0,2,-1]]])
     if delta:
@@ -20,7 +25,7 @@ def marginalized_like(alpha,beta=1,delta=False):
 
 #parameter's class
 class params:
-    def __init__(self,N_revs,N_friends,N_suggested,model,alpha=12,beta=12,delta=False):
+    def __init__(self,N_revs,N_friends,N_suggested,model,alpha=12,beta=12,delta=False,prior_name='uniform'):
         self.N_revs, self.N_suggested, self.model = N_revs, N_suggested, model
         
         self.ground = np.arange(N_revs)<N_friends
@@ -49,6 +54,15 @@ class params:
         elif self.model == 'q':
             self.S_slice,self.mp_slice,self.rho_slice = (3000,1001),(2500,1001),(1000,201)
         #self.model_name = self.suffix
+        self.prior_name=prior_name
+        if prior_name=='uniform':
+            self.prior = normalize(np.ones(2**N_revs))
+        else:
+            self.suffix += '_'+prior_name
+            if prior_name == 'biased':
+                nf = np.sum(self.configs,axis=1)
+                self.prior = normalize(((.9)**nf)*((.1)**(N_revs-nf)))
+        
         
     def run_suggested(self): 
         comb_list= np.stack(list(combinations(np.arange(self.N_revs),self.N_suggested)))
@@ -114,8 +128,8 @@ def point_log_like(suggested,positives,model,configs,p_beta=np.ones((2,3))): #Fi
 
 #routines
 @njit(cache=True)
-def comp_routine(log_L,ind):
-    log_post= np.log(normalize(np.ones(log_L.shape[1])))
+def comp_routine(log_L,ind,prior):
+    log_post= np.log(normalize(prior))
     V = [normalize(np.exp(log_post))]
     for li in log_L[ind]:
         log_post +=li
@@ -124,8 +138,8 @@ def comp_routine(log_L,ind):
         V.append(pi)
     return V
 
-def routine(fun,log_L,ind):
-    return np.array([fun(p) for p in comp_routine(log_L,ind)])
+def routine(fun,log_L,ind,prior):
+    return np.array([fun(p) for p in comp_routine(log_L,ind,prior)])
 
 def log_like(suggested,positives,gl):
     return np.stack([point_log_like(s,p,gl.model,gl.configs,gl.p_beta) for (s,p) in zip(suggested,positives)])
@@ -136,23 +150,23 @@ def entropy(p):
     p_pos=p[p!=0]
     return (-p_pos*np.log2(p_pos)).sum()
 
-def posterior_entropy(log_L,ind):
-    return routine(entropy,log_L,ind)
+def posterior_entropy(log_L,ind,gl):
+    return routine(entropy,log_L,ind,gl.prior)
 
 def reviewer_targeted(log_L,suggested,target,ind,gl):
     tar_inds = [target in s for s in suggested]
     log_L_i = log_L[tar_inds] #remove submissions where target was not suggested.
     i_friend = gl.configs[:,target]
     mar_i = lambda pi: (pi*i_friend).sum()
-    return routine(mar_i,log_L_i,ind)
+    return routine(mar_i,log_L_i,ind,gl.prior)
 
 def max_post(log_L,ind,gl):
     maximum_posterior = lambda pi: gl.errors[pi.argmax()]
-    return routine(maximum_posterior,log_L,ind)
+    return routine(maximum_posterior,log_L,ind,gl.prior)
 
 def exp_error(log_L,ind,gl):
     expected_error = lambda pi: (pi*gl.errors).sum()
-    return routine(expected_error,log_L,ind)
+    return routine(expected_error,log_L,ind,gl.prior)
 
 
 def third_more_likely(pi,gl):
@@ -162,10 +176,10 @@ def third_more_likely(pi,gl):
     
 def third_prob(log_L,ind,gl):
     th_prob = lambda pi: third_more_likely(pi,gl)[0]
-    return routine(th_prob,log_L,ind)
+    return routine(th_prob,log_L,ind,gl.prior)
 
 def third_error(log_L,ind,gl):
-    pi = comp_routine(log_L,ind)[-1] #gets only last one
+    pi = comp_routine(log_L,ind,gl.prior)[-1] #gets only last one
     conf,prop_friends = third_more_likely(pi,gl)
     N = gl.N_suggested
     return ind.size,conf,N - np.sum(gl.ground[prop_friends])
@@ -180,7 +194,7 @@ def slices(i,j,lim):
     return (y[:i*j]).reshape(j,i)
 
 def get_entropies(log_L,gl):
-    S = np.stack([posterior_entropy(log_L,ind) for ind in slices(*gl.S_slice,log_L.shape[0])])
+    S = np.stack([posterior_entropy(log_L,ind,gl) for ind in slices(*gl.S_slice,log_L.shape[0])])
     df = pd.DataFrame(S)
     df.to_csv('entropy_{}.csv'.format(gl.suffix),index=False)
     return S
