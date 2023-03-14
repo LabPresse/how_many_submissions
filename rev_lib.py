@@ -46,6 +46,10 @@ class params:
                 self.suffix+='_{},{}'.format(alpha,beta)
                 self.run_qualities = lambda size: np.random.beta(alpha,beta,size)
             self.p_beta = marginalized_like(alpha,beta,delta)
+            
+        if N_suggested !=3:
+            self.suffix+='_{}suggested'.format(N_suggested)
+            
         if 2*N_friends!=N_revs:
             self.suffix+='_{}friends'.format(N_friends)   
             
