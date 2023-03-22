@@ -52,7 +52,10 @@ gl = params(10,5,3,'c') #cynical model
 #gl = params(10,9,3,'q',prior_name = 'biased') #quality with 9 friends
 
 gl = params(10,5,4,'c') #cynical model with 4 suggestions
+gl = params(10,5,5,'c') #cynical model with 5 suggestions
 
+gl = params(10,5,4,'q') #cynical model with 4 suggestions
+gl = params(10,5,5,'q') #cynical model with 5 suggestions
 
 print(gl.suffix)
 to_simulate = True
@@ -101,11 +104,11 @@ if not to_simulate:
     
     
 if all([has_S_map,has_marg,has_3rd]):
-    print("We already have a trajectories for all metrics of these parameters. Do you wish do run another simulation? if so press 'y'.")
+    print("We already have trajectories for all metrics of these parameters. Do you wish do run another simulation? if so press 'y'.")
     x = input()
     to_redo = (x=='y')    
 elif any([has_S_map,has_marg,has_3rd]):
-    print("We already have a trajectories for some metrics of these parameters. Do you wish do run another simulation? if so press 'y'.")
+    print("We already have trajectories for some metrics of these parameters. Do you wish do run another simulation? if so press 'y'.")
     print("Otherwise it will only run trajectories for metrics we do not found.")
     x = input()
     to_redo = (x=='y')
