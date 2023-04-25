@@ -1,6 +1,6 @@
 # How many submissions 
 
-This repository has the code for the simulation, inference and figures related to the manuscript titled "How many submissions does it take to discover friendly suggested reviewers?", available as a preprint (https://arxiv.org/abs/2210.00905).
+This repository has the code for the simulation, inference and figures related to the manuscript titled "How many submissions does it take to discover friendly suggested reviewers?", available as a preprint (https://arxiv.org/abs/2210.00905) and as a published paper at PLOS ONE (https://doi.org/10.1371/journal.pone.0284212)
 
 The file 'rev_lib.py' is a library developed to perform several aspects of the project.
 
